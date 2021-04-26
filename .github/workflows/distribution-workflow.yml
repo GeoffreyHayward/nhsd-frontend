@@ -539,16 +539,22 @@ jobs:
       # Step 3
       # Create versioned release in S3
       #
-      - name: Create version
+      - name: Replace Index
         working-directory: ${{steps.download.outputs.download-path}}
         run: aws s3 cp index.html s3://${{ secrets.S3_ORIGIN }}/index.html
-
+      - name: Replace Favicon
+        working-directory: ${{steps.download.outputs.download-path}}
+        run: aws s3 cp favicon.ico s3://${{ secrets.S3_ORIGIN }}/favicon.ico
+      - name: Replace Favicon
+        working-directory: ${{steps.download.outputs.download-path}}/js
+        run: aws s3 sync . s3://${{ secrets.S3_ORIGIN }}/js --delete
+        
       #
       # Step 4
       # Replace latest and invalid CloudFront's catch of latest
       #
       - name: Refesh CloudFront Cache
-        run: aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/index.html"
+        run: aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "favicon.ico index.html js/*"
 
   #
   # Put CDN distribution artifact onto the S3 origin.
