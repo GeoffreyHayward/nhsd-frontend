@@ -433,6 +433,15 @@ jobs:
         working-directory: ${{steps.download.outputs.download-path}}/npm-dist
 
       #
+      # Step 3.4
+      #
+      - name: Zip Homepage distribution
+        run: |
+          echo ${{ steps.version.outputs.version }} > version
+          zip -r ../homepage-dist.zip .
+        working-directory: ${{steps.download.outputs.download-path}}/homepage-dist
+
+      #
       # Step 4
       # Create Release
       # - Adds versioned release and tag
