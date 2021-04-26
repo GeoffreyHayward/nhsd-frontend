@@ -103,8 +103,6 @@ jobs:
       - name: Build dist folder
         run: |
           ls
-          npm run build
-        working-directory: homepage
 
       #
       # Step 6
