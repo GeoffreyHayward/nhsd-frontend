@@ -1,4 +1,4 @@
-name: Distribution Workflow 
+name: Distribution Workflow
 
 on:
   push:
@@ -101,7 +101,9 @@ jobs:
       # Step 5
       #
       - name: Build dist folder
-        run: npm run build
+        run: |
+          ls
+          npm run build
         working-directory: homepage
 
       #
@@ -374,6 +376,7 @@ jobs:
   tag_and_release:
     name: "Create GitHub Release"
     needs:
+      - build_homepage
       - build_dist
       - build_storybook
       - build_npm_package
@@ -445,7 +448,7 @@ jobs:
           release_name: Release ${{ steps.version.outputs.version }}
           draft: false
           prerelease: false
-          
+
       - name: Upload Homepage Dist Zip
         uses: actions/upload-release-asset@v1
         env:
