@@ -95,14 +95,15 @@ jobs:
       # Step 4
       #
       - name: Initialise NPM
-        run: cd homepage & npm i
+        run: npm i
+        working-directory: homepage
 
       #
       # Step 5
       #
       - name: Build dist folder
-        run: |
-          ls
+        run: npm run build
+        working-directory: homepage
 
       #
       # Step 6
