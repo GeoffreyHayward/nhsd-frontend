@@ -539,15 +539,9 @@ jobs:
       # Step 3
       # Create versioned release in S3
       #
-      - name: Replace Index
+      - name: Replace Root JS
         working-directory: ${{steps.download.outputs.download-path}}
-        run: aws s3 cp index.html s3://${{ secrets.S3_ORIGIN }}/index.html
-      - name: Replace Favicon
-        working-directory: ${{steps.download.outputs.download-path}}
-        run: aws s3 cp favicon.ico s3://${{ secrets.S3_ORIGIN }}/favicon.ico
-      - name: Replace Favicon
-        working-directory: ${{steps.download.outputs.download-path}}/js
-        run: aws s3 sync . s3://${{ secrets.S3_ORIGIN }}/js --delete
+        run: aws s3 sync . s3://${{ secrets.S3_ORIGIN }} --delete --exclude "*" --include "favicon.ico" --include "index.html" --include "js/*"
         
       #
       # Step 4
