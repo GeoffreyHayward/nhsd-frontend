@@ -542,13 +542,13 @@ jobs:
       - name: Replace Root JS
         working-directory: ${{steps.download.outputs.download-path}}
         run: aws s3 sync . s3://${{ secrets.S3_ORIGIN }} --delete --exclude "*" --include "favicon.ico" --include "index.html" --include "js/*"
-        
+
       #
       # Step 4
       # Replace latest and invalid CloudFront's catch of latest
       #
       - name: Refesh CloudFront Cache
-        run: aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "favicon.ico index.html js/*"
+        run: aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths /favicon.ico /index.html /js/*
 
   #
   # Put CDN distribution artifact onto the S3 origin.
