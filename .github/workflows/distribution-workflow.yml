@@ -86,33 +86,34 @@ jobs:
           ROTATION: ${{ fromJSON(steps.cache-key-helper.outputs.result).rotation }}
         with:
           path: ~/.npm
-          key: ${{ runner.os }}-nhs-digital-distribution-${{ env.YEAR }}-${{ env.ROTATION }}
+          key: ${{ runner.os }}-nhs-digital-homepage-${{ env.YEAR }}-${{ env.ROTATION }}
           restore-keys: |
-            ${{ runner.os }}-nhs-digital-distribution-${{ env.YEAR }}-
-            ${{ runner.os }}-nhs-digital-distribution-
+            ${{ runner.os }}-nhs-digital-homepage-${{ env.YEAR }}-
+            ${{ runner.os }}-nhs-digital-homepage-
 
       #
       # Step 4
       #
       - name: Initialise NPM
-        run: cd homepage & npm i
+        run: npm i
+        working-directory: homepage
 
       #
       # Step 5
       #
       - name: Build dist folder
-        run: cd homepage & npm run build
+        run: npm run build
+        working-directory: homepage
 
       #
       # Step 6
-      # Store hpmepage distribution workflow artifacts
+      # Store homepage distribution workflow artifacts
       #
       - name: Archive dist artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: hpmepage-dist
-          path: |
-            dist/
+          name: homepage-dist
+          path: homepage/dist/
 
   #
   # Build CDN Distribution from source
@@ -374,6 +375,7 @@ jobs:
   tag_and_release:
     name: "Create GitHub Release"
     needs:
+      - build_homepage
       - build_dist
       - build_storybook
       - build_npm_package
@@ -446,6 +448,16 @@ jobs:
           draft: false
           prerelease: false
 
+      - name: Upload Homepage Dist Zip
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path:  ${{steps.download.outputs.download-path}}/homepage-dist.zip
+          asset_name: homepage-dist-${{ steps.version.outputs.version }}.zip
+          asset_content_type: application/zip
+
       - name: Upload CDN Dist Zip
         uses: actions/upload-release-asset@v1
         env:
@@ -455,7 +467,7 @@ jobs:
           asset_path:  ${{steps.download.outputs.download-path}}/cdn-dist.zip
           asset_name: cdn-dist-${{ steps.version.outputs.version }}.zip
           asset_content_type: application/zip
-    
+
       - name: Upload Storybook Zip
         uses: actions/upload-release-asset@v1
         env:
@@ -533,6 +545,59 @@ jobs:
         run: aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
 
   #
+  # Put the homepage distribution artifact onto the S3 origin.
+  #
+  dist_homepage:
+    name: "Distribute Homepage"
+    needs:
+      - tag_and_release
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      #
+      # Step 1
+      # Download CDN artifact and merge version artifact into the same folder
+      #
+      - name: Download all workflow artifacts
+        uses: actions/download-artifact@v2
+        id: download
+        with:
+          name: homepage-dist
+          path: homepage-dist
+      - name: Download version artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: version
+          path: homepage-dist
+
+      #
+      # Step 2
+      # Set up AWS CLI
+      #
+      - name: Configure AWS credentials from Test account
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.PIPELINE_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.PIPELINE_AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-2
+
+      #
+      # Step 3
+      # Create versioned release in S3
+      #
+      - name: Create version
+        working-directory: ${{steps.download.outputs.download-path}}
+        run: aws s3 cp index.html s3://${{ secrets.S3_ORIGIN }}/index.html
+
+      #
+      # Step 4
+      # Replace latest and invalid CloudFront's catch of latest
+      #
+      - name: Refesh CloudFront Cache
+        run: aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/index.html"
+
+  #
   # Put CDN distribution artifact onto the S3 origin.
   #
   dist_cdn:
@@ -577,7 +642,7 @@ jobs:
       #
       - name: Create version
         working-directory: ${{steps.download.outputs.download-path}}
-        run: aws s3 cp . s3://design-system.digital.nhs.uk/cdn/$(cat version) --recursive
+        run: aws s3 cp . s3://${{ secrets.S3_ORIGIN }}/cdn/$(cat version) --recursive
 
       #
       # Step 4
@@ -585,7 +650,7 @@ jobs:
       #
       - name: Replace latest
         working-directory: ${{steps.download.outputs.download-path}}
-        run: aws s3 sync . s3://design-system.digital.nhs.uk/cdn/latest --delete
+        run: aws s3 sync . s3://${{ secrets.S3_ORIGIN }}/cdn/latest --delete
       - name: Refesh CloudFront Cache
         run: aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/cdn/latest/*"
 
@@ -635,7 +700,7 @@ jobs:
       #
       - name: Create version
         working-directory: ${{steps.download.outputs.download-path}}
-        run: aws s3 cp . s3://design-system.digital.nhs.uk/storybook/$(cat version) --recursive
+        run: aws s3 cp . s3://${{ secrets.S3_ORIGIN }}/storybook/$(cat version) --recursive
 
       #
       # Step 4
@@ -643,6 +708,6 @@ jobs:
       #
       - name: Replace latest
         working-directory: ${{steps.download.outputs.download-path}}
-        run: aws s3 sync . s3://design-system.digital.nhs.uk/storybook/latest --delete
+        run: aws s3 sync . s3://${{ secrets.S3_ORIGIN }}/storybook/latest --delete
       - name: Refesh CloudFront Cache
         run: aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/storybook/latest/*"
