@@ -10,7 +10,7 @@
             <nav aria-labelledby="sticky-nav-header">
               <ul>
                 <li class="nhsd-m-sticky-navigation__item" >
-                  <a class="nhsd-a-link" href="#top">Top of page</a>
+                  <a class="nhsd-a-link" href="#top">Go to the top of page</a>
                 </li>
                 <li class="nhsd-m-sticky-navigation__item" data-nav-content="documentation">
                   <a class="nhsd-a-link" href="#documentation">Documentation</a>
@@ -74,7 +74,7 @@ export default {
   },
   created() {
     axios.get("https://api.github.com/repos/NHS-digital-website/nhsd-frontend/releases?page=1&per_page=9")
-      .then(response => this.releases = response.data)
+      .then(response => this.releases = response.data);
   },
   mounted() {
     const el = document.createElement("script");
