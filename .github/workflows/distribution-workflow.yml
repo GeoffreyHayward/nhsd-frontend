@@ -528,7 +528,7 @@ jobs:
       # Step 2
       # Set up AWS CLI
       #
-      - name: Configure AWS credentials from Test account
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.PIPELINE_AWS_ACCESS_KEY_ID }}
@@ -543,12 +543,6 @@ jobs:
         working-directory: ${{steps.download.outputs.download-path}}
         run: aws s3 sync . s3://${{ secrets.S3_ORIGIN }} --delete --exclude "*" --include "/favicon.ico" --include "/index.html" --include "/js/*"
 
-      #
-      # Step 4
-      # Replace latest and invalid CloudFront's catch of latest
-      #
-      - name: Refesh CloudFront Cache
-        run: aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths /index.html /js/*
 
   #
   # Put CDN distribution artifact onto the S3 origin.
@@ -582,7 +576,7 @@ jobs:
       # Step 2
       # Set up AWS CLI
       #
-      - name: Configure AWS credentials from Test account
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.PIPELINE_AWS_ACCESS_KEY_ID }}
@@ -596,16 +590,6 @@ jobs:
       - name: Create version
         working-directory: ${{steps.download.outputs.download-path}}
         run: aws s3 cp . s3://${{ secrets.S3_ORIGIN }}/cdn/$(cat version) --recursive
-
-      #
-      # Step 4
-      # Replace latest and invalid CloudFront's catch of latest
-      #
-      - name: Replace latest
-        working-directory: ${{steps.download.outputs.download-path}}
-        run: aws s3 sync . s3://${{ secrets.S3_ORIGIN }}/cdn/latest --delete
-      - name: Refesh CloudFront Cache
-        run: aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/cdn/latest/*"
 
 
   #
@@ -640,7 +624,7 @@ jobs:
       # Step 2
       # Set up AWS CLI
       #
-      - name: Configure AWS credentials from Test account
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.PIPELINE_AWS_ACCESS_KEY_ID }}
@@ -655,12 +639,39 @@ jobs:
         working-directory: ${{steps.download.outputs.download-path}}
         run: aws s3 cp . s3://${{ secrets.S3_ORIGIN }}/storybook/$(cat version) --recursive
 
+
+
+  #
+  # Clear the CloudFront cache.
+  #
+  clear_cache:
+    name: "Clear CloudFront Cache"
+    needs:
+      - dist_homepage
+      - dist_cdn
+      - dist_storybook
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+
       #
-      # Step 4
+      # Step 1
+      # Set up AWS CLI
+      #
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.PIPELINE_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.PIPELINE_AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-2
+
+      #
+      # Step 2
       # Replace latest and invalid CloudFront's catch of latest
       #
-      - name: Replace latest
+      - name: Create Invalidation
         working-directory: ${{steps.download.outputs.download-path}}
         run: aws s3 sync . s3://${{ secrets.S3_ORIGIN }}/storybook/latest --delete
       - name: Refesh CloudFront Cache
-        run: aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/storybook/latest/*"
+        run: aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/storybook/latest/*" "/cdn/latest/*" "/index.html"
