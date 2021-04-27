@@ -539,10 +539,13 @@ jobs:
       # Step 3
       # Create versioned release in S3
       #
-      - name: Replace Root JS
+      # WARNING BEFORE UPDATING CONFIG
+      # The sync --delete has the power to remove everything from the bucket. Please try --dryrun before committing an 
+      # update!!!
+      #
+      - name: Replace homepage and it's assets
         working-directory: ${{steps.download.outputs.download-path}}
-        run: aws s3 sync . s3://${{ secrets.S3_ORIGIN }} --delete --exclude "*" --include "/favicon.ico" --include "/index.html" --include "/js/*"
-
+        run: aws s3 sync . s3://${{ secrets.S3_ORIGIN }}/ --exclude "cdn/*" --exclude "storybook/*" --exclude="error.html" --delete
 
   #
   # Put CDN distribution artifact onto the S3 origin.
