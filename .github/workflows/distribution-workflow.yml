@@ -591,6 +591,14 @@ jobs:
         working-directory: ${{steps.download.outputs.download-path}}
         run: aws s3 cp . s3://${{ secrets.S3_ORIGIN }}/cdn/$(cat version) --recursive
 
+      #
+      # Step 4
+      # Replace 'latest' folder's content
+      #
+      - name: Replace latest
+        working-directory: ${{steps.download.outputs.download-path}}
+        run: aws s3 sync . s3://${{ secrets.S3_ORIGIN }}/cdn/latest --delete
+
 
   #
   # Put the Storybook distribution artifact onto the S3 origin.
@@ -639,6 +647,13 @@ jobs:
         working-directory: ${{steps.download.outputs.download-path}}
         run: aws s3 cp . s3://${{ secrets.S3_ORIGIN }}/storybook/$(cat version) --recursive
 
+      #
+      # Step 4
+      # Replace 'latest' folder's content
+      #
+      - name: Replace latest
+        working-directory: ${{steps.download.outputs.download-path}}
+        run: aws s3 sync . s3://${{ secrets.S3_ORIGIN }}/storybook/latest --delete
 
 
   #
@@ -670,8 +685,5 @@ jobs:
       # Step 2
       # Replace latest and invalid CloudFront's catch of latest
       #
-      - name: Create Invalidation
-        working-directory: ${{steps.download.outputs.download-path}}
-        run: aws s3 sync . s3://${{ secrets.S3_ORIGIN }}/storybook/latest --delete
       - name: Refesh CloudFront Cache
         run: aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/storybook/latest/*" "/cdn/latest/*" "/index.html"
