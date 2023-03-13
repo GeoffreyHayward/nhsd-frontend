@@ -2,8 +2,8 @@ name: Slack Deployment Command for Design System Test
 #Slack deployment command for design system on test
 on:
   push:
-    tags:
-      - v*
+    branches:
+      - master
 
 jobs:
 
