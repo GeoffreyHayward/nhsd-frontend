@@ -1,9 +1,9 @@
 name: Slack Deployment Command for Design System Test
 #Slack deployment command for design system on test
 on:
-  push:
-    branches:
-      - master
+  repository_dispatch:
+    types:
+      - slack-deploy-command-for-design-system-test
 
 jobs:
 
