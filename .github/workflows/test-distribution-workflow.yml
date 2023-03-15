@@ -14,16 +14,6 @@ jobs:
 
     steps:
 
-      # Validate that the command is called from deployment-od2-prod
-      - name: Checking source
-        uses: actions/github-script@v6
-        env:
-          CHANNEL_ID: ${{ github.event.client_payload.data.channel_id }}
-        if: ${{ env.CHANNEL_ID !='C026PH4GQSH' }}
-        with:
-          script: |
-            core.setFailed('Caller source not verified!')
-
       #
       # Provide a URL to the active GitHub Actions Workflow run
       #
