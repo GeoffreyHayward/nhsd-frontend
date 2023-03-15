@@ -12,18 +12,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 1
 
-    steps:
-
-curl -X POST -H 'Content-type: application/json' --data '{"text":"Hello, World!"}' https://hooks.slack.com/services/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
-  -
-
-  - name: Slack message Test
-      id: slack_message
-      run: |
-        curl \
-        -H "Content-type: application/json" \
-        -X POST ${{ secrets.TEST_SLACK_WEBHOOK }} \
-        --data '{"text":"Hello, World!"}''
+    - name: Slack message Test
+        id: slack_message
+        run: |
+          curl \
+          -H "Content-type: application/json" \
+          -X POST ${{ secrets.TEST_SLACK_WEBHOOK }} \
+          --data '{"text":"Hello, World!"}''
 
 
   #
