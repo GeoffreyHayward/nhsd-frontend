@@ -14,19 +14,17 @@ jobs:
 
     steps:
 
-      #
-      # Provide a URL to the active GitHub Actions Workflow run
-      #
-      - name: Slack message (Track progress message)
-        if: ${{ success() }}
-        uses: muinmomin/webhook-action@v1.0.0
-        with:
-          url: ${{ env.SLACK_WEBHOOK }}
-          data: '{ "channel": "${{ env.CHANNEL_ID }}", "text": "Pipeline progress...", "attachments": [{ "text" : "The pipeline logs are here ${{ env.GITHUB_WORKFLOW_URL }}",  "color": "#005EB8" }] }'
-        env:
-          SLACK_WEBHOOK: ${{  secrets.SLACK_WEBHOOK }}
-          GITHUB_WORKFLOW_URL: "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          CHANNEL_ID: ${{ github.event.client_payload.data.channel_id }}
+curl -X POST -H 'Content-type: application/json' --data '{"text":"Hello, World!"}' https://hooks.slack.com/services/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
+  -
+
+  - name: Slack message Test
+      id: slack_message
+      run: |
+        curl \
+        -H "Content-type: application/json" \
+        -X POST ${{ secrets.TEST_SLACK_WEBHOOK }} \
+        --data '{"text":"Hello, World!"}''
+
 
   #
   # Build homepage distribution from source
