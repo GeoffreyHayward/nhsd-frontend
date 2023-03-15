@@ -6,7 +6,9 @@ on:
       - main
 
 jobs:
-
+  #
+  # Build homepage distribution from source
+  #
   integrity:
     name: Slack Integrity Check
     runs-on: ubuntu-latest
