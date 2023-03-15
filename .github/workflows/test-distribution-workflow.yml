@@ -1,11 +1,42 @@
 name: Slack Deployment Command for Design System Test
 #Slack deployment command for design system on test
 on:
-  repository_dispatch:
-    types:
-      - slack-deploy-command-for-design-system-test
+  push:
+    branches:
+      - main
 
 jobs:
+
+  integrity:
+    name: Slack Integrity Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+
+    steps:
+
+      # Validate that the command is called from deployment-od2-prod
+      - name: Checking source
+        uses: actions/github-script@v6
+        env:
+          CHANNEL_ID: ${{ github.event.client_payload.data.channel_id }}
+        if: ${{ env.CHANNEL_ID !='C026PH4GQSH' }}
+        with:
+          script: |
+            core.setFailed('Caller source not verified!')
+
+      #
+      # Provide a URL to the active GitHub Actions Workflow run
+      #
+      - name: Slack message (Track progress message)
+        if: ${{ success() }}
+        uses: muinmomin/webhook-action@v1.0.0
+        with:
+          url: ${{ env.SLACK_WEBHOOK }}
+          data: '{ "channel": "${{ env.CHANNEL_ID }}", "text": "Pipeline progress...", "attachments": [{ "text" : "The pipeline logs are here ${{ env.GITHUB_WORKFLOW_URL }}",  "color": "#005EB8" }] }'
+        env:
+          SLACK_WEBHOOK: ${{  secrets.SLACK_WEBHOOK }}
+          GITHUB_WORKFLOW_URL: "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          CHANNEL_ID: ${{ github.event.client_payload.data.channel_id }}
 
   #
   # Build homepage distribution from source
@@ -342,9 +373,9 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          aws-access-key-id: ${{ secrets.PIPELINE_AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.PIPELINE_AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-west-2
+          aws-access-key-id: ${{ secrets.TEST_PIPELINE_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.TEST_PIPELINE_AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{secrets.TEST_S3_ORIGIN }}
 
       #
       # Step 3
@@ -352,7 +383,7 @@ jobs:
       #
       - name: Create version
         working-directory: ${{steps.download.outputs.download-path}}
-        run: aws s3 cp . s3://${{ secrets.S3_ORIGIN }}/cdn/${{ github.ref_name }} --recursive
+        run: aws s3 cp . s3://${{ secrets.TEST_S3_ORIGIN }}/cdn/${{ github.ref_name }} --recursive
 
   #
   # Put the Storybook distribution artifact onto the S3 origin.
@@ -393,4 +424,4 @@ jobs:
       #
       - name: Create version
         working-directory: ${{steps.download.outputs.download-path}}
-        run: aws s3 cp . s3://${{ secrets.S3_ORIGIN }}/storybook/${{ github.ref_name }} --recursive
+        run: aws s3 cp . s3://${{ secrets.TEST_S3_ORIGIN }}/storybook/${{ github.ref_name }} --recursive
