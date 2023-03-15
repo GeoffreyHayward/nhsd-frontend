@@ -14,13 +14,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 1
 
-    - name: Slack message Test
-        id: slack_message
-        run: |
-          curl \
-          -H "Content-type: application/json" \
-          -X POST ${{ secrets.TEST_SLACK_WEBHOOK }} \
-          --data '{"text":"Hello, World!"}''
+    steps:
+      - name: Slack message Test
+          id: slack_message
+          run: |
+            curl \
+            -H "Content-type: application/json" \
+            -X POST ${{ secrets.TEST_SLACK_WEBHOOK }} \
+            --data '{"text":"Hello, World!"}''
 
 
   #
