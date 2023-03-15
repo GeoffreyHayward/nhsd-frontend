@@ -16,12 +16,12 @@ jobs:
 
     steps:
       - name: Slack message Test
-          id: slack_message
-          run: |
-            curl \
-            -H "Content-type: application/json" \
-            -X POST ${{ secrets.TEST_SLACK_WEBHOOK }} \
-            --data '{"text":"Hello, World!"}''
+        id: slack_message
+        run: |
+           curl \
+           -H "Content-type: application/json" \
+           -X POST ${{ secrets.TEST_SLACK_WEBHOOK }} \
+           --data '{"text":"Hello, World!"}''
 
 
   #
